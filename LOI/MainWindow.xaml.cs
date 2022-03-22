@@ -1,71 +1,68 @@
 ﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.ComponentModel;
 using System.Threading;
-using Common.Extensions;
 using Common.Parsers;
 
 namespace LOI
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
-        private bool IsPathShown = false;
-        private string fileName = null;
-        private int LineCounter = 1;
+        private bool _isPathShown = false;
+        private bool _isContentEdited = false;
+        private string _openedFileName = null;
+        private int _lineCounter = 1;
         
-        private bool isContentEdited = false;
+        private readonly IParser _parser;
+        private BackgroundWorker _worker;
 
-        private IParser parser;
-        private BackgroundWorker worker;
+        private readonly string _helpMessageText =
+            "Программа решает задачу перебора всевозможных вариантов для заданной грамматики.\n" +
+            "При задании правил вывода обязательно надо включить аксиому \"S\", т.к. для программы это является " +
+            "начальным местом для перебора вариантов. Пример, как может выглядеть задание правил вывода:\n" +
+            "S -> AAb | %\n" +
+            "A -> Sa | c\n" +
+            "В правилах вывода символ \"%\" обозначает пустое слово. Для программы все символы в нижнем регистре " +
+            "и верхнем регистрах считаются соответственно треминалами и нетерминалами.\n" +
+            "Если необходимо посмотреть цепочку вывода, то нажатие \"F5\" переключает вид между показом цепочек " +
+            "вывода и не показом.";
 
         public MainWindow()
         {
-            this.parser = new SplitParser();
+            this._parser = new SplitParser();
             
             this.InitializeBackgroundWorker();
             this.InitializeComponent();
         }
 
-        private void InitializeBackgroundWorker()
-        {
-            this.worker = new BackgroundWorker();
-            this.worker.WorkerReportsProgress = true;
-            this.worker.WorkerSupportsCancellation = true;
-            this.worker.DoWork += this.worker_DoWork;
-            this.worker.RunWorkerCompleted += this.worker_RunWorkerCompleted;
-            this.worker.ProgressChanged += this.worker_ProgressChanged;
-        }
-
         private void TextBoxLeft_OnTextChanged(object sender, TextChangedEventArgs e)
         {
-            if (!isContentEdited)
+            if (!_isContentEdited)
             {
-                this.isContentEdited = true;
-                this.Title = $"LOI - *" + (fileName ?? "Unnamed");
+                this._isContentEdited = true;
+                this.Title = $"LOI - *" + (_openedFileName ?? "Unnamed");
             }
 
-            if (worker.IsBusy)
+            if (_worker.IsBusy)
             {
-                worker.CancelAsync();
+                _worker.CancelAsync();
             }
             this.TextBoxRight.Clear();
-            this.LineCounter = 1;
+            this._lineCounter = 1;
                 
             try
             {
                 Thread.Sleep(50);
-                this.worker.RunWorkerAsync(this.TextBoxLeft.Text);
+                this._worker.RunWorkerAsync(this.TextBoxLeft.Text);
             }
             catch
             {
-                this.worker.Dispose();
+                this._worker.Dispose();
                 this.InitializeBackgroundWorker();
-                this.worker.RunWorkerAsync(this.TextBoxLeft.Text);
+                this._worker.RunWorkerAsync(this.TextBoxLeft.Text);
             }
         }
 
@@ -73,7 +70,7 @@ namespace LOI
         {
             if (e.Key == Key.F5)
             {
-                this.IsPathShown = !this.IsPathShown;
+                this._isPathShown = !this._isPathShown;
                 this.TextBoxLeft_OnTextChanged(null, null);
             }
         }
@@ -97,13 +94,19 @@ namespace LOI
         {
             this.ExitApp();
         }
+        
+        private void ShowHelp(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(this._helpMessageText, "Help", 
+                MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
+        }
 
         private void CreateNewFile()
         {
-            if (isContentEdited)
+            if (this._isContentEdited)
             {
                 this.SaveFile();
-                this.isContentEdited = false;
+                this._isContentEdited = false;
                 this.CreateNewFile();
             }
             else
@@ -117,23 +120,24 @@ namespace LOI
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
+                FileName = "temp.loi",
                 Filter = "LOI file (*.loi)|*.loi"
             };
             if (openFileDialog.ShowDialog() == true)
             {
-                this.fileName = openFileDialog.FileName;
+                this._openedFileName = openFileDialog.FileName;
             }
-            if (fileName is not null)
+            if (_openedFileName is not null)
             {
-                this.TextBoxLeft.Text = File.ReadAllText(fileName);
-                this.Title = $"LOI - {fileName}";
-                this.isContentEdited = false;
+                this.TextBoxLeft.Text = File.ReadAllText(_openedFileName);
+                this.Title = $"LOI - {_openedFileName}";
+                this._isContentEdited = false;
             }
         }
 
         private void SaveFile()
         {
-            if (fileName is null)
+            if (_openedFileName is null)
             {
                 SaveFileDialog saveFileDialog = new SaveFileDialog
                 {
@@ -141,142 +145,21 @@ namespace LOI
                 };
                 if (saveFileDialog.ShowDialog() == true)
                 {
-                    this.fileName = saveFileDialog.FileName;
-                    this.Title = $"LOI - {fileName}";
+                    this._openedFileName = saveFileDialog.FileName;
+                    this.Title = $"LOI - {_openedFileName}";
                 }
             }
-            if (fileName is not null)
+            if (_openedFileName is not null)
             {
-                File.WriteAllText(fileName, this.TextBoxLeft.Text);
-                this.Title = $"LOI - {fileName}";
-                isContentEdited = false;
+                File.WriteAllText(_openedFileName, this.TextBoxLeft.Text);
+                this.Title = $"LOI - {_openedFileName}";
+                this._isContentEdited = false;
             }
         }
 
         private void ExitApp()
         {
             this.Close();
-        }
-
-        private void ShowHelp(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show(
-                "Программа решает задачу перебора всевозможных вариантов для заданной грамматики.\n" + 
-                "При задании правил вывода обязательно надо включить аксиому \"S\", т.к. для программы это является " +
-                "начальным местом для перебора вариантов. Пример, как может выглядеть задание правил вывода:\n" +
-                "S -> AAb | %\n" +
-                "A -> Sa | c\n" +
-                "В правилах вывода символ \"%\" обозначает пустое слово. Для программы все символы в нижнем регистре " +
-                "и верхнем регистрах считаются соответственно треминалами и нетерминалами.\n" +
-                "Если необходимо посмотреть цепочку вывода, то нажатие \"F5\" переключает вид между показом цепочек " +
-                "вывода и не показом.", 
-                "Help", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.Yes);
-        }
-
-        private void worker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            var rules = this.parser.Parse(e.Argument as string);
-            if (rules is null)
-            {
-                e.Cancel = true;
-                return;
-            }
-
-            var queue = new Queue<string>();
-            var queuePaths = new Queue<List<string>>();
-            queue.Enqueue("S");
-            queuePaths.Enqueue(new List<string>());
-            HashSet<string> visited = new HashSet<string>();
-
-            int counterResults = 0;
-            int counter = 0;
-
-            while (queue.Count > 0 && counterResults < 1000)
-            {
-                if (worker.CancellationPending)
-                {
-                    return;
-                }
-
-                var current = queue.Dequeue();
-                var currentPath = queuePaths.Dequeue();
-                visited.Add(current);
-
-                bool flag = true;
-                foreach (var rule in rules)
-                {
-                    if (current.Contains(rule.Item1))
-                    {
-                        flag = false;
-                        foreach (var right in rule.Item2)
-                        {
-                            foreach (var index in current.IndexesOf(rule.Item1))
-                            {
-                                string next = current.Substring(0, index) +
-                                              right +
-                                              current.Substring(index + rule.Item1.Length);
-                                next = next.Replace("%", "");
-                                if (!visited.Contains(next) && !queue.Contains(next))
-                                {
-                                    queue.Enqueue(next);
-                                    var newPath = new List<string>(currentPath);
-                                    newPath.Add(current);
-                                    queuePaths.Enqueue(newPath);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (flag)
-                {
-                    if (current == current.ToLower())
-                    {
-                        worker.ReportProgress(1, new Tuple<string, List<string>>(current, currentPath));
-                        counterResults++;
-                        Thread.Sleep(5);
-                    }
-
-                    counter = 0;
-                }
-
-                counter += 1;
-            }
-
-            e.Result = counterResults != 1000;
-        }
-        
-        private void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (!e.Cancelled && e.Result != null)
-            {
-                if ((bool)e.Result)
-                {
-                    this.TextBoxRight.Text = $"# All possible options have been checked!\r\n{this.TextBoxRight.Text}";
-                }
-                else
-                {
-                    this.TextBoxRight.Text = $"# Stopped! Checked 1000 options!\r\n{this.TextBoxRight.Text}";
-                }
-            }
-        }
-
-        private void worker_ProgressChanged(object? sender, ProgressChangedEventArgs e)
-        {
-            var value = e.UserState as Tuple<string, List<string>>;
-            if (this.LineCounter != 1)
-            {
-                this.TextBoxRight.Text += "\r\n";
-            }
-            this.TextBoxRight.Text += $"{this.LineCounter}. " + (value?.Item1 == "" ? "\"Пустая строка\"" : value?.Item1);
-            
-            if (this.IsPathShown)
-            {
-                this.TextBoxRight.Text += "\r\n  " + string.Join(" => ", value.Item2) + 
-                                          $" => {(value?.Item1 == "" ? "\"Пустая строка\"" : value?.Item1)}\n";
-            }
-
-            this.LineCounter++;
         }
     }
 }
