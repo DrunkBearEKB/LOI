@@ -7,72 +7,113 @@
         mc:Ignorable="d"
         Title="LOI" Height="600" Width="800" MinWidth="200" MinHeight="200"
         KeyDown="Window_KeyDown">
+
     <Window.CommandBindings>
         <CommandBinding Command="New" Executed="CreateNewFile"/>
         <CommandBinding Command="Open" Executed="OpenFile"/>
         <CommandBinding Command="Save" Executed="SaveFile"/>
         <CommandBinding Command="Stop" Executed="ExitApp"/>
+
+        <CommandBinding Command="Undo" Executed="UndoEdit"/>
+        <CommandBinding Command="Redo" Executed="RedoEdit"/>
+        <CommandBinding Command="Cut" Executed="CutText"/>
+        <CommandBinding Command="Copy" Executed="CopyText"/>
+        <CommandBinding Command="Paste" Executed="PasteText"/>
+        <CommandBinding Command="Delete" Executed="DeleteText"/>
+        <CommandBinding Command="SelectAll" Executed="SelectAllText"/>
+
         <CommandBinding Command="Help" Executed="ShowHelp"/>
     </Window.CommandBindings>
+
     <Window.InputBindings>
         <KeyBinding Key="N" Modifiers="Control" Command="New"/>
         <KeyBinding Key="O" Modifiers="Control" Command="Open"/>
         <KeyBinding Key="S" Modifiers="Control" Command="Save"/>
         <KeyBinding Key="Q" Modifiers="Control" Command="Stop"/>
+
+        <KeyBinding Key="Z" Modifiers="Control" Command="Undo"/>
+        <KeyBinding Key="Y" Modifiers="Control" Command="Redo"/>
+        <KeyBinding Key="X" Modifiers="Control" Command="Cut"/>
+        <KeyBinding Key="C" Modifiers="Control" Command="Copy"/>
+        <KeyBinding Key="V" Modifiers="Control" Command="Paste"/>
+        <KeyBinding Key="Delete" Command="Delete"/>
+        <KeyBinding Key="A" Modifiers="Control" Command="SelectAll"/>
+
         <KeyBinding Key="F1" Command="Help"/>
     </Window.InputBindings>
+
     <DockPanel>
-        
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_New" Command="New" InputGestureText="Ctrl+N"/>
-                <MenuItem Header="_Open" Command="Open" InputGestureText="Ctrl+O"/>
-                <MenuItem Header="_Save" Command="Save" InputGestureText="Ctrl+S"/>
-                <Separator />
-                <MenuItem Header="_Exit" Command="Stop" InputGestureText="Ctrl+Q"/>
+        <Menu DockPanel.Dock="Top" Height="25" Background="#3B3B3B" Foreground="#C0C0C6">
+            <MenuItem Header="_File" Height="25" Background="#3B3B3B" BorderThickness="0">
+                <MenuItem Header="_New" Command="New" InputGestureText="Ctrl+N"
+                          Background="#FF3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+                <MenuItem Header="_Open" Command="Open" InputGestureText="Ctrl+O"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+                <MenuItem Header="_Save" Command="Save" InputGestureText="Ctrl+S"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+                <Separator Padding="0" Margin="0" />
+                <MenuItem Header="_Exit" Command="Stop" InputGestureText="Ctrl+Q"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
             </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="_Show Help" Command="Help" InputGestureText="F1" />
+
+            <MenuItem Header="_Edit" Height="25" Background="#3B3B3B" BorderThickness="0">
+                <MenuItem Header="_Undo" Command="Undo" InputGestureText="Ctrl+Z"
+                          Background="#3B3B3B" BorderThickness="0" />
+                <MenuItem Header="_Redo" Command="Redo" InputGestureText="Ctrl+Y"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+                <Separator Padding="0" Margin="0" />
+                <MenuItem Header="_Cut" Command="Cut" InputGestureText="Ctrl+X"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+                <MenuItem Header="_Copy" Command="Copy" InputGestureText="Ctrl+C"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+                <MenuItem Header="_Paste" Command="Paste" InputGestureText="Ctrl+V"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+                <MenuItem Header="_Delete" Command="Delete" InputGestureText="Del"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+                <Separator Padding="0" Margin="0" />
+                <MenuItem Header="_Select All" Command="SelectAll" InputGestureText="Ctrl+A"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
+            </MenuItem>
+
+            <MenuItem Header="_Help" Height="25" Background="#3B3B3B" BorderThickness="0">
+                <MenuItem Header="_Show Help" Command="Help" InputGestureText="F1"
+                          Background="#3B3B3B" BorderThickness="0" Padding="0" Margin="0" />
             </MenuItem>
         </Menu>
+
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="2"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TextBox 
-                x:Name="TextBoxLeft" 
-                MinWidth="100"
-                TextWrapping="NoWrap" 
-                AcceptsReturn="True" 
-                Grid.Column="0" 
-                FontFamily="Cascadia Code" 
-                FontSize="14" 
-                Background="#FF1A1A1A" 
-                Foreground="White" 
-                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                ScrollViewer.VerticalScrollBarVisibility="Auto"
-                TextChanged="TextBoxLeft_OnTextChanged"/>
-            <GridSplitter 
-                ResizeDirection="Columns"
-                Grid.Column="1"
-                Width="2"
-                HorizontalAlignment="Stretch"
-                Margin="0" />
-            <TextBox 
-                x:Name="TextBoxRight" 
-                MinWidth="100"
-                TextWrapping="NoWrap" 
-                AcceptsReturn="True" 
-                Grid.Column="2" 
-                FontFamily="Cascadia Code" 
-                FontSize="14" 
-                Background="#FF1A1A1A" 
-                Foreground="White" 
-                ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                ScrollViewer.VerticalScrollBarVisibility="Auto"
-                IsReadOnly="True"/>
+            
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="23" />
+            </Grid.RowDefinitions>
+
+            <TextBox x:Name="TextBoxLeft" MinWidth="100" TextWrapping="NoWrap" 
+                     AcceptsReturn="True" Grid.Row="0" Grid.Column="0" FontFamily="Cascadia Code" 
+                     FontSize="15" Background="#262626" Foreground="#C0C0C6" 
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     TextChanged="TextBoxLeft_OnTextChanged"/>
+
+            <GridSplitter ResizeDirection="Columns" Grid.Row="0" Grid.Column="1" 
+                          Width="2" HorizontalAlignment="Stretch" Margin="0" />
+
+            <TextBox x:Name="TextBoxRight" MinWidth="100" TextWrapping="NoWrap" 
+                     AcceptsReturn="True" Grid.Row="0" Grid.Column="2" FontFamily="Cascadia Code" 
+                     FontSize="15" Background="#262626" Foreground="#C0C0C6" 
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     IsReadOnly="True"/>
+
+            <TextBox x:Name="TextBoxInfo" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                     FontFamily="Cascadia Code" FontSize="12" IsReadOnly="True" Height="23"  
+                     Background="#3B3B3B" Foreground="#C0C0C6" VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"/>
         </Grid>
     </DockPanel>
 </Window>

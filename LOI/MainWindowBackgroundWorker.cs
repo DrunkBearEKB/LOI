@@ -6,16 +6,18 @@ using Common.Extensions;
 
 namespace LOI
 {
-    public partial class MainWindow
+    public partial class MainWindow : IDisposable
     {
+        private readonly int _timeDelayBetweenPrint = 5;
+
         private void InitializeBackgroundWorker()
         {
-            this._worker = new BackgroundWorker();
+            this._worker = new();
             this._worker.WorkerReportsProgress = true;
             this._worker.WorkerSupportsCancellation = true;
             this._worker.DoWork += this.Worker_DoWork;
-            this._worker.RunWorkerCompleted += this.Worker_RunWorkerCompleted;
             this._worker.ProgressChanged += this.Worker_ProgressChanged;
+            this._worker.RunWorkerCompleted += this.Worker_RunWorkerCompleted;
         }
         
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
@@ -77,9 +79,9 @@ namespace LOI
                 {
                     if (current == current.ToLower())
                     {
-                        _worker.ReportProgress(1, new Tuple<string, List<string>>(current, currentPath));
+                        this._worker.ReportProgress(1, new Tuple<string, List<string>>(current, currentPath));
                         counterResults++;
-                        Thread.Sleep(5);
+                        Thread.Sleep(this._timeDelayBetweenPrint);
                     }
 
                     counter = 0;
@@ -90,40 +92,47 @@ namespace LOI
 
             e.Result = counterResults != 1000;
         }
-        
-        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (!e.Cancelled && e.Result != null)
-            {
-                if ((bool)e.Result)
-                {
-                    this.TextBoxRight.Text = $"# All possible options have been checked!\r\n{this.TextBoxRight.Text}";
-                }
-                else
-                {
-                    this.TextBoxRight.Text = $"# Stopped! Checked 1000 options!\r\n{this.TextBoxRight.Text}";
-                }
-            }
-        }
 
         private void Worker_ProgressChanged(object? sender, ProgressChangedEventArgs e)
         {
+            bool flagSelectAll = this.TextBoxRight.Text.Length == this.TextBoxRight.SelectionLength;
+
             var value = e.UserState as Tuple<string, List<string>>;
             if (this._lineCounter != 1)
             {
                 this.TextBoxRight.Text += "\r\n";
             }
-            this.TextBoxRight.Text += $"{this._lineCounter}. " + 
-                                      (value?.Item1 == "" ? "\"Пустая строка\"" : value?.Item1);
-            
+            this.TextBoxRight.Text += $"{this._lineCounter}. " +
+                                      (value?.Item1 == "" ? "\"Empty string\"" : value?.Item1);
+
             if (this._isPathShown)
             {
                 if (value != null)
                     this.TextBoxRight.Text += "\r\n  " + string.Join(" => ", value.Item2) +
-                                              $" => {(value?.Item1 == "" ? "\"Пустая строка\"" : value?.Item1)}\n";
+                                              $" => {(value?.Item1 == "" ? "\"Empty string\"" : value?.Item1)}\n";
             }
 
+            this.TextBoxInfo.Text = $"[INFO] Processing... Find {_lineCounter} options.";
             this._lineCounter++;
+
+            if (flagSelectAll)
+            {
+                this.TextBoxRight.SelectAll();
+            }
+        }
+
+        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error != null)
+            {
+                this.TextBoxInfo.Text = $"[ERROR] Please check the correctness of the grammar you entered.";
+            }
+            else if (!e.Cancelled && e.Result != null)
+            {
+                this.TextBoxInfo.Text = (bool)e.Result ?
+                    ($"[INFO] All possible options have been checked! Totally found {_lineCounter - 1}" + (_lineCounter == 2 ? "option." : "options.")) : 
+                    "[INFO] Stopped! Checked 1000 options!";
+            }
         }
     }
 }

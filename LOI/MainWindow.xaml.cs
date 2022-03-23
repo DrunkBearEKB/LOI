@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.ComponentModel;
 using System.Threading;
+using System.Windows.Media;
 using Common.Parsers;
 
 namespace LOI
@@ -20,15 +21,16 @@ namespace LOI
         private BackgroundWorker _worker;
 
         private readonly string _helpMessageText =
-            "Программа решает задачу перебора всевозможных вариантов для заданной грамматики.\n" +
-            "При задании правил вывода обязательно надо включить аксиому \"S\", т.к. для программы это является " +
-            "начальным местом для перебора вариантов. Пример, как может выглядеть задание правил вывода:\n" +
+            "The program solves the problem of iterating through all possible options for a given grammar.\n\n" +
+            "When setting the output rules, it is necessary to include the axiom \"S\", because for the " +
+            "program this is the starting place for iterating through the options. An example of what setting " +
+            "output rules might look like:\n" +
             "S -> AAb | %\n" +
             "A -> Sa | c\n" +
-            "В правилах вывода символ \"%\" обозначает пустое слово. Для программы все символы в нижнем регистре " +
-            "и верхнем регистрах считаются соответственно треминалами и нетерминалами.\n" +
-            "Если необходимо посмотреть цепочку вывода, то нажатие \"F5\" переключает вид между показом цепочек " +
-            "вывода и не показом.";
+            "In the output rules, the symbol \"%\" is an empty word. For the program, all characters " +
+            "in lowercase and uppercase are considered terminals and non-terminals, respectively.\n\n" +
+            "If you need to view the output chain, pressing \"F5\" switches the view between showing " +
+            "output chains and not showing.";
 
         public MainWindow()
         {
@@ -94,6 +96,80 @@ namespace LOI
         {
             this.ExitApp();
         }
+
+        private void UndoEdit(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (this.TextBoxLeft.IsEnabled && this.TextBoxLeft.CanUndo)
+            {
+                this.TextBoxLeft.Undo();
+            }
+        }
+
+        private void RedoEdit(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (this.TextBoxLeft.IsEnabled && this.TextBoxLeft.CanRedo)
+            {
+                this.TextBoxLeft.Redo();
+            }
+        }
+
+        private void CutText(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (this.TextBoxLeft.IsFocused && this.TextBoxLeft.IsSelectionActive)
+            {
+                this.TextBoxLeft.Cut();
+            }
+        }
+
+        private void CopyText(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (this.TextBoxLeft.IsFocused)
+            {
+                if (this.TextBoxLeft.IsSelectionActive)
+                {
+                    this.TextBoxLeft.Copy();
+                }
+            }
+            else if (this.TextBoxRight.IsFocused)
+            {
+                if (this.TextBoxRight.IsSelectionActive)
+                {
+                    this.TextBoxRight.Copy();
+                }
+            }
+        }
+
+        private void PasteText(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (this.TextBoxLeft.IsFocused)
+            {
+                this.TextBoxLeft.Paste();
+            }
+        }
+
+        private void DeleteText(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (this.TextBoxLeft.IsFocused)
+            {
+                double offset = this.TextBoxLeft.VerticalOffset;
+                int cursorPosition = this.TextBoxLeft.SelectionStart;
+                this.TextBoxLeft.Text = this.TextBoxLeft.Text.Remove(this.TextBoxLeft.SelectionStart, this.TextBoxLeft.SelectionLength);
+                this.TextBoxLeft.CaretIndex = cursorPosition;
+                this.TextBoxLeft.ScrollToVerticalOffset(offset);
+            }
+        }
+
+        private void SelectAllText(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (this.TextBoxLeft.IsEnabled)
+            {
+                this.TextBoxLeft.SelectAll();
+            }
+            else if (this.TextBoxRight.IsEnabled)
+            {
+                this.TextBoxRight.SelectAll();
+            }
+        }
         
         private void ShowHelp(object sender, RoutedEventArgs e)
         {
@@ -137,7 +213,7 @@ namespace LOI
 
         private void SaveFile()
         {
-            if (_openedFileName is null)
+            if (this._openedFileName is null)
             {
                 SaveFileDialog saveFileDialog = new SaveFileDialog
                 {
@@ -146,13 +222,13 @@ namespace LOI
                 if (saveFileDialog.ShowDialog() == true)
                 {
                     this._openedFileName = saveFileDialog.FileName;
-                    this.Title = $"LOI - {_openedFileName}";
+                    this.Title = $"LOI - {this._openedFileName}";
                 }
             }
-            if (_openedFileName is not null)
+            if (this._openedFileName is not null)
             {
-                File.WriteAllText(_openedFileName, this.TextBoxLeft.Text);
-                this.Title = $"LOI - {_openedFileName}";
+                File.WriteAllText(this._openedFileName, this.TextBoxLeft.Text);
+                this.Title = $"LOI - {this._openedFileName}";
                 this._isContentEdited = false;
             }
         }
@@ -160,6 +236,11 @@ namespace LOI
         private void ExitApp()
         {
             this.Close();
+        }
+
+        public void Dispose()
+        {
+            this._worker.Dispose();
         }
     }
 }
